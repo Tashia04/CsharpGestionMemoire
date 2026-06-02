@@ -1,0 +1,8 @@
+<Solution>
+  <Project Path="APIText/APIText.csproj" Id="c308d1d6-e4cc-489c-a642-d95bff96855e" />
+  <Project Path="FrontMemoire3Tier/FrontMemoire3Tier.csproj" Id="72251abe-0904-4789-97a8-1c2ff417278f">
+    <BuildDependency Project="MetierMemoire/MetierMemoire.csproj" />
+  </Project>
+  <Project Path="GestionEtudiantWinForms/GestionEtudiantWinForms.csproj" Id="8fd29f79-ef93-44d8-90aa-39fb491854e7" />
+  <Project Path="MetierMemoire/MetierMemoire.csproj" Id="60882d51-0d9b-4ce5-9d85-7c32fd1d3176" />
+</Solution>
