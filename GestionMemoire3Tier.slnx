@@ -1,5 +1,9 @@
 <Solution>
+  <Folder Name="/Éléments de solution/">
+    <File Path=".gitignore" />
+  </Folder>
   <Project Path="APIText/APIText.csproj" Id="c308d1d6-e4cc-489c-a642-d95bff96855e" />
+  <Project Path="AppClientPhp/AppClientPhp.csproj" Id="be04b91b-a8cb-42ac-8da8-5a206788de31" />
   <Project Path="FrontMemoire3Tier/FrontMemoire3Tier.csproj" Id="72251abe-0904-4789-97a8-1c2ff417278f">
     <BuildDependency Project="MetierMemoire/MetierMemoire.csproj" />
   </Project>
