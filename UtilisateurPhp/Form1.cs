@@ -1,12 +1,11 @@
-using AppClientPhp.Model;
-using AppClientPhp.Service;
+using UtilisateurPhp.Models;
+using UtilisateurPhp.Services;
 using Serilog;
 using System;
-using System.Globalization;
 using System.Threading.Tasks;
 using System.Windows.Forms;
 
-namespace AppClientPhp
+namespace UtilisateurPhp
 {
     public partial class Form1 : Form
     {
@@ -14,26 +13,26 @@ namespace AppClientPhp
         // Toutes les opérations CRUD (Ajouter, Modifier, Supprimer, Lister)
         // passent par cet objet.
         private readonly ApiService _api = new ApiService();
-        private bool _chargementProduits;
+        private bool _chargementUtilisateurs;
 
         public Form1()
         {
             InitializeComponent();
-            dgProduit.SelectionChanged += dgProduit_SelectionChanged;
+            dgUtilisateur.SelectionChanged += dgUtilisateur_SelectionChanged;
         }
 
         private async void Form1_Load(object sender, EventArgs e)
         {
-            await ChargerProduits();
+            await ChargerUtilisateurs();
         }
         /// <summary>
         /// Cette méthode est appelée lorsqu'un utilisateur clique sur une cellule
-        /// du DataGridView. Elle récupère le produit sélectionné et remplit
+        /// du DataGridView. Elle récupère l'utilisateur sélectionné et remplit
         /// automatiquement les zones de texte.
         /// </summary>
         /// <param name="sender">Contrôle ayant déclenché l'évènement.</param>
         /// <param name="e">Informations sur la cellule sélectionnée.</param>
-        private void dgProduit_CellContentClick(object sender, DataGridViewCellEventArgs e)
+        private void dgUtilisateur_CellContentClick(object sender, DataGridViewCellEventArgs e)
         {
             RemplirChampsDepuisSelection();
         }
@@ -44,47 +43,47 @@ namespace AppClientPhp
         /// </summary>
         /// <param name="sender">Contrôle ayant déclenché l'évènement.</param>
         /// <param name="e">Informations sur l'évènement.</param>
-        private void dgProduit_SelectionChanged(object sender, EventArgs e)
+        private void dgUtilisateur_SelectionChanged(object sender, EventArgs e)
         {
             RemplirChampsDepuisSelection();
         }
 
         /// <summary>
-        /// Cette méthode permet d'ajouter un nouveau produit.
-        /// Elle valide les informations saisies, crée un objet Produit,
-        /// l'envoie à l'API puis recharge la liste des produits.
+        /// Cette méthode permet d'ajouter un nouvel utilisateur.
+        /// Elle valide les informations saisies, crée un objet Utilisateur,
+        /// l'envoie à l'API puis recharge la liste des utilisateurs.
         /// </summary>
         /// <param name="sender">Bouton Ajouter.</param>
         /// <param name="e">Informations sur le clic.</param>
         private async void btnAjouter_Click(object sender, EventArgs e)
         {
-            Log.Information("Action: Ajouter produit - Nom={Nom}", txtNom.Text);
+            Log.Information("Action: Ajouter utilisateur - Nom={Nom}", txtNom.Text);
 
             // Vérifie que toutes les données sont valides.
             if (!ValiderChamps()) return;
 
-            // Création d'un objet Produit à partir des valeurs saisies.
-            var produit = new Produit
+            // Création d'un objet Utilisateur à partir des valeurs saisies.
+            var utilisateur = new Utilisateur
             {
                 Nom = txtNom.Text.Trim(),
-                Prix = decimal.Parse(txtPrix.Text, CultureInfo.CurrentCulture),
-                Quantite = int.Parse(txtQuantite.Text)
+                Prenom = txtPrenom.Text.Trim(),
+                Age = int.Parse(txtAge.Text)
             };
 
             try
             {
-                // Envoie du produit à l'API.
-                bool succes = await _api.CreateAsync(produit);
+                // Envoie de l'utilisateur à l'API.
+                bool succes = await _api.CreateAsync(utilisateur);
 
                 if (succes)
                 {
-                    Log.Information("Produit ajoute: {@Produit}", produit);
+                    Log.Information("Utilisateur ajoute: {@Utilisateur}", utilisateur);
 
-                    MessageBox.Show("Produit ajoute !", "Succes",
+                    MessageBox.Show("Utilisateur ajoute !", "Succes",
                         MessageBoxButtons.OK, MessageBoxIcon.Information);
 
-                    // Recharge la liste des produits.
-                    await ChargerProduits();
+                    // Recharge la liste des utilisateurs.
+                    await ChargerUtilisateurs();
 
                     // Nettoie les champs de saisie.
                     Vider();
@@ -97,7 +96,7 @@ namespace AppClientPhp
             }
             catch (Exception ex)
             {
-                Log.Error(ex, "Echec de l ajout du produit");
+                Log.Error(ex, "Echec de l ajout de l utilisateur");
 
                 MessageBox.Show("Erreur : " + ex.Message,
                     "Erreur", MessageBoxButtons.OK, MessageBoxIcon.Error);
@@ -105,55 +104,55 @@ namespace AppClientPhp
         }
 
         /// <summary>
-        /// Cette méthode permet de modifier le produit actuellement sélectionné.
+        /// Cette méthode permet de modifier l'utilisateur actuellement sélectionné.
         /// Les nouvelles informations sont envoyées à l'API puis la liste est actualisée.
         /// </summary>
         /// <param name="sender">Bouton Modifier.</param>
         /// <param name="e">Informations sur le clic.</param>
         private async void btnModifier_Click(object sender, EventArgs e)
         {
-            // Récupère le produit sélectionné.
-            var produitSelectionne = GetProduitSelectionne();
+            // Récupère l'utilisateur sélectionné.
+            var utilisateurSelectionne = GetUtilisateurSelectionne();
 
-            if (produitSelectionne == null)
+            if (utilisateurSelectionne == null)
             {
-                MessageBox.Show("Selectionnez un produit a modifier.",
+                MessageBox.Show("Selectionnez un utilisateur a modifier.",
                     "Information", MessageBoxButtons.OK, MessageBoxIcon.Information);
                 return;
             }
 
-            // Vérifie que le produit possède un identifiant valide.
-            if (produitSelectionne.Id <= 0)
+            // Vérifie que l'utilisateur possède un identifiant valide.
+            if (utilisateurSelectionne.Id <= 0)
             {
-                MessageBox.Show("Le produit selectionne n'a pas d'id valide.",
+                MessageBox.Show("L'utilisateur selectionne n'a pas d'id valide.",
                     "Erreur", MessageBoxButtons.OK, MessageBoxIcon.Warning);
                 return;
             }
 
-            Log.Information("Action: Modifier produit - Id={Id}", produitSelectionne.Id);
+            Log.Information("Action: Modifier utilisateur - Id={Id}", utilisateurSelectionne.Id);
 
             // Vérifie les informations saisies.
             if (!ValiderChamps()) return;
 
             // Création de l'objet contenant les nouvelles valeurs.
-            var produit = new Produit
+            var utilisateur = new Utilisateur
             {
-                Id = produitSelectionne.Id,
+                Id = utilisateurSelectionne.Id,
                 Nom = txtNom.Text.Trim(),
-                Prix = decimal.Parse(txtPrix.Text, CultureInfo.CurrentCulture),
-                Quantite = int.Parse(txtQuantite.Text)
+                Prenom = txtPrenom.Text.Trim(),
+                Age = int.Parse(txtAge.Text)
             };
 
             try
             {
-                bool succes = await _api.UpdateAsync(produit);
+                bool succes = await _api.UpdateAsync(utilisateur);
 
                 if (succes)
                 {
-                    MessageBox.Show("Produit modifie !",
+                    MessageBox.Show("Utilisateur modifie !",
                         "Succes", MessageBoxButtons.OK, MessageBoxIcon.Information);
 
-                    await ChargerProduits();
+                    await ChargerUtilisateurs();
                     Vider();
                 }
                 else
@@ -164,7 +163,7 @@ namespace AppClientPhp
             }
             catch (Exception ex)
             {
-                Log.Error(ex, "Echec de la modification du produit");
+                Log.Error(ex, "Echec de la modification de l utilisateur");
 
                 MessageBox.Show("Erreur : " + ex.Message,
                     "Erreur", MessageBoxButtons.OK, MessageBoxIcon.Error);
@@ -172,32 +171,32 @@ namespace AppClientPhp
         }
 
         /// <summary>
-        /// Cette méthode supprime le produit sélectionné après confirmation
-        /// de l'utilisateur, puis recharge la liste des produits.
+        /// Cette méthode supprime l'utilisateur sélectionné après confirmation
+        /// de l'utilisateur, puis recharge la liste des utilisateurs.
         /// </summary>
         /// <param name="sender">Bouton Supprimer.</param>
         /// <param name="e">Informations sur le clic.</param>
         private async void btnSupprimer_Click(object sender, EventArgs e)
         {
-            var produitSelectionne = GetProduitSelectionne();
+            var utilisateurSelectionne = GetUtilisateurSelectionne();
 
-            if (produitSelectionne == null)
+            if (utilisateurSelectionne == null)
             {
-                MessageBox.Show("Selectionnez un produit a supprimer.",
+                MessageBox.Show("Selectionnez un utilisateur a supprimer.",
                     "Information", MessageBoxButtons.OK, MessageBoxIcon.Information);
                 return;
             }
 
-            if (produitSelectionne.Id <= 0)
+            if (utilisateurSelectionne.Id <= 0)
             {
-                MessageBox.Show("Le produit selectionne n'a pas d'id valide.",
+                MessageBox.Show("L'utilisateur selectionne n'a pas d'id valide.",
                     "Erreur", MessageBoxButtons.OK, MessageBoxIcon.Warning);
                 return;
             }
 
             // Demande une confirmation avant la suppression.
             var confirmation = MessageBox.Show(
-                "Voulez-vous supprimer ce produit ?",
+                "Voulez-vous supprimer cet utilisateur ?",
                 "Confirmation",
                 MessageBoxButtons.YesNo,
                 MessageBoxIcon.Question);
@@ -207,16 +206,16 @@ namespace AppClientPhp
 
             try
             {
-                Log.Information("Action: Supprimer produit - Id={Id}", produitSelectionne.Id);
+                Log.Information("Action: Supprimer utilisateur - Id={Id}", utilisateurSelectionne.Id);
 
-                bool succes = await _api.DeleteAsync(produitSelectionne.Id);
+                bool succes = await _api.DeleteAsync(utilisateurSelectionne.Id);
 
                 if (succes)
                 {
-                    MessageBox.Show("Produit supprime !",
+                    MessageBox.Show("Utilisateur supprime !",
                         "Succes", MessageBoxButtons.OK, MessageBoxIcon.Information);
 
-                    await ChargerProduits();
+                    await ChargerUtilisateurs();
                     Vider();
                 }
                 else
@@ -227,7 +226,7 @@ namespace AppClientPhp
             }
             catch (Exception ex)
             {
-                Log.Error(ex, "Echec de la suppression du produit");
+                Log.Error(ex, "Echec de la suppression de l utilisateur");
 
                 MessageBox.Show("Erreur : " + ex.Message,
                     "Erreur", MessageBoxButtons.OK, MessageBoxIcon.Error);
@@ -236,8 +235,7 @@ namespace AppClientPhp
 
         /// <summary>
         /// Vérifie que les informations saisies par l'utilisateur sont valides.
-        /// Le nom ne doit pas être vide, le prix doit être un nombre décimal
-        /// et la quantité un entier.
+        /// Le nom et le prénom ne doivent pas être vides, et l'âge doit être un entier.
         /// </summary>
         /// <returns>
         /// true si toutes les données sont valides, sinon false.
@@ -254,24 +252,21 @@ namespace AppClientPhp
                 return false;
             }
 
-            if (!decimal.TryParse(txtPrix.Text,
-                NumberStyles.Number,
-                CultureInfo.CurrentCulture,
-                out _))
+            if (string.IsNullOrWhiteSpace(txtPrenom.Text))
             {
-                Log.Warning("Validation echouee: prix invalide - valeur={V}", txtPrix.Text);
+                Log.Warning("Validation echouee: champ Prenom vide");
 
-                MessageBox.Show("Le prix est invalide.",
+                MessageBox.Show("Le prenom est obligatoire.",
                     "Validation", MessageBoxButtons.OK, MessageBoxIcon.Warning);
 
                 return false;
             }
 
-            if (!int.TryParse(txtQuantite.Text, out _))
+            if (!int.TryParse(txtAge.Text, out _))
             {
-                Log.Warning("Validation echouee: quantite invalide - valeur={V}", txtQuantite.Text);
+                Log.Warning("Validation echouee: age invalide - valeur={V}", txtAge.Text);
 
-                MessageBox.Show("La quantite est invalide.",
+                MessageBox.Show("L'age est invalide.",
                     "Validation", MessageBoxButtons.OK, MessageBoxIcon.Warning);
 
                 return false;
@@ -281,40 +276,40 @@ namespace AppClientPhp
         }
 
         /// <summary>
-        /// Charge tous les produits depuis l'API puis les affiche
+        /// Charge tous les utilisateurs depuis l'API puis les affiche
         /// dans le DataGridView.
         /// </summary>
         /// <returns>Une tâche asynchrone.</returns>
-        private async Task ChargerProduits()
+        private async Task ChargerUtilisateurs()
         {
             try
             {
                 // Indique que le chargement est en cours.
-                _chargementProduits = true;
+                _chargementUtilisateurs = true;
 
                 // Génère automatiquement les colonnes du DataGridView.
-                dgProduit.AutoGenerateColumns = true;
+                dgUtilisateur.AutoGenerateColumns = true;
 
                 // Vide l'ancienne source de données.
-                dgProduit.DataSource = null;
+                dgUtilisateur.DataSource = null;
 
-                // Récupère la liste des produits depuis l'API.
-                dgProduit.DataSource = await _api.GetAllAsync();
+                // Récupère la liste des utilisateurs depuis l'API.
+                dgUtilisateur.DataSource = await _api.GetAllAsync();
 
                 // Supprime la sélection.
-                dgProduit.ClearSelection();
+                dgUtilisateur.ClearSelection();
             }
             catch (Exception ex)
             {
-                Log.Error(ex, "Echec du chargement des produits");
+                Log.Error(ex, "Echec du chargement des utilisateurs");
 
-                MessageBox.Show("Impossible de charger les produits : " + ex.Message,
+                MessageBox.Show("Impossible de charger les utilisateurs : " + ex.Message,
                     "Erreur", MessageBoxButtons.OK, MessageBoxIcon.Error);
             }
             finally
             {
                 // Le chargement est terminé.
-                _chargementProduits = false;
+                _chargementUtilisateurs = false;
             }
         }
 
@@ -325,48 +320,48 @@ namespace AppClientPhp
         private void Vider()
         {
             txtNom.Clear();
-            txtPrix.Clear();
-            txtQuantite.Clear();
+            txtPrenom.Clear();
+            txtAge.Clear();
 
-            dgProduit.ClearSelection();
+            dgUtilisateur.ClearSelection();
         }
 
         /// <summary>
-        /// Retourne le produit actuellement sélectionné dans le DataGridView.
+        /// Retourne l'utilisateur actuellement sélectionné dans le DataGridView.
         /// </summary>
         /// <returns>
-        /// L'objet Produit sélectionné ou null si aucun produit n'est sélectionné.
+        /// L'objet Utilisateur sélectionné ou null si aucun utilisateur n'est sélectionné.
         /// </returns>
-        private Produit GetProduitSelectionne()
+        private Utilisateur GetUtilisateurSelectionne()
         {
-            if (dgProduit.SelectedRows.Count == 0 &&
-                dgProduit.SelectedCells.Count == 0)
+            if (dgUtilisateur.SelectedRows.Count == 0 &&
+                dgUtilisateur.SelectedCells.Count == 0)
                 return null;
 
-            if (dgProduit.CurrentRow == null)
+            if (dgUtilisateur.CurrentRow == null)
                 return null;
 
-            return dgProduit.CurrentRow.DataBoundItem as Produit;
+            return dgUtilisateur.CurrentRow.DataBoundItem as Utilisateur;
         }
 
         /// <summary>
         /// Remplit les zones de texte avec les informations
-        /// du produit actuellement sélectionné.
+        /// de l'utilisateur actuellement sélectionné.
         /// </summary>
         private void RemplirChampsDepuisSelection()
         {
             // Ignore l'évènement pendant le chargement des données.
-            if (_chargementProduits)
+            if (_chargementUtilisateurs)
                 return;
 
-            var produit = GetProduitSelectionne();
+            var utilisateur = GetUtilisateurSelectionne();
 
-            if (produit == null)
+            if (utilisateur == null)
                 return;
 
-            txtNom.Text = produit.Nom;
-            txtPrix.Text = produit.Prix.ToString(CultureInfo.CurrentCulture);
-            txtQuantite.Text = produit.Quantite.ToString();
+            txtNom.Text = utilisateur.Nom;
+            txtPrenom.Text = utilisateur.Prenom;
+            txtAge.Text = utilisateur.Age.ToString();
         }
     }
 }

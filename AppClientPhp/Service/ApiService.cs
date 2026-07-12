@@ -27,8 +27,9 @@ namespace AppClientPhp.Service
             {
                 var response = await _client.GetStringAsync(BaseUrl);
                 var produits = JsonConvert.DeserializeObject<List<Produit>>(response);
+                if (produits == null) produits = new List<Produit>();
                 Log.Information("{Count} produit(s) recupere(s)", produits.Count);
-                return produits.ToList();
+                return produits;
             }
             catch (Exception ex)
             {
@@ -53,7 +54,44 @@ namespace AppClientPhp.Service
             {
                 Log.Error(ex, "Erreur CreateAsync"); throw;
             }
-        }     // ... UpdateAsync, DeleteAsync : meme pattern 
+        }
+
+        public async Task<bool> UpdateAsync(Produit produit)
+        {
+            Log.Information("PUT modification: {@Produit}", produit);
+            try
+            {
+                var json = JsonConvert.SerializeObject(produit);
+                var content = new StringContent(json, Encoding.UTF8, "application/json");
+                var response = await _client.PutAsync(BaseUrl + "?id=" + produit.Id, content);
+                var responseBody = await response.Content.ReadAsStringAsync();
+                if (response.IsSuccessStatusCode)
+                    Log.Information("Produit modifie avec succes");
+                else Log.Warning("Modification echouee - StatusCode: {Code}, Response: {Response}", response.StatusCode, responseBody);
+                return response.IsSuccessStatusCode;
+            }
+            catch (Exception ex)
+            {
+                Log.Error(ex, "Erreur UpdateAsync"); throw;
+            }
+        }
+
+        public async Task<bool> DeleteAsync(int id)
+        {
+            Log.Information("DELETE suppression: Id={Id}", id);
+            try
+            {
+                var response = await _client.DeleteAsync(BaseUrl + "?id=" + id);
+                if (response.IsSuccessStatusCode)
+                    Log.Information("Produit supprime avec succes");
+                else Log.Warning("Suppression echouee - StatusCode: {Code}", response.StatusCode);
+                return response.IsSuccessStatusCode;
+            }
+            catch (Exception ex)
+            {
+                Log.Error(ex, "Erreur DeleteAsync"); throw;
+            }
+        }
     }
 
 
