@@ -11,4 +11,5 @@
   <Project Path="GestionUtilisateur/GestionUtilisateur.csproj" Id="1a95f662-f3cc-4565-baab-5a607dd52e47" />
   <Project Path="MetierMemoire/MetierMemoire.csproj" Id="60882d51-0d9b-4ce5-9d85-7c32fd1d3176" />
   <Project Path="UtilisateurPhp/UtilisateurPhp.csproj" Id="4b7ebed7-21ab-477f-a0ec-3969f9aa0d2e" />
+  <Project Path="WorkerServiceSendMail/WorkerServiceSendMail.csproj" Id="b3bf7c95-8b4b-4560-8525-edfa5048adb8" />
 </Solution>
